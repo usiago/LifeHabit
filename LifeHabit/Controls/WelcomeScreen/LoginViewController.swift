@@ -79,7 +79,7 @@ class LoginViewController: UIViewController {
     /* ⬇️ 뒤처리용 함수 */
     // 로그인버튼
     @IBAction private func loginButtonTapped(_ sender: UIButton) {
-        if idTextField.text == "usia" && pwTextField.text == "1234" {
+        if idTextField.text == "usia" && pwTextField.text == "1234" || idTextField.text == "test" && pwTextField.text == "1234"{
             self.dismiss(animated: true)
         } else {
             let alert = UIAlertController(title: "로그인 오류", message: "로그인 또는 비밀번호가 맞지 않습니다.", preferredStyle: .alert) // .actionSheet 은 아래에 뜨는 얼럿창
