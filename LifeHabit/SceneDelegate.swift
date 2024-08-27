@@ -73,13 +73,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Called as the scene transitions from the background to the foreground.
         // Use this method to undo the changes made on entering the background.
 //        (window?.rootViewController as? MainHomeViewController)?.scheduleAllHabitNotifications()
-        // 🍎 앱이 포그라운드로 돌아올 때 데이터 불러오기 및 테이블뷰 갱신
+        //  앱이 포그라운드로 돌아올 때 데이터 불러오기 및 테이블뷰 갱신
         if let mainHomeVC = window?.rootViewController as? UITabBarController,
            let mainVC = mainHomeVC.viewControllers?.first as? UINavigationController,
            let homeVC = mainVC.topViewController as? MainHomeViewController {
             homeVC.habitDataManager.loadHabitData() // 데이터 다시 로드
             homeVC.mainTableView?.reloadData()       // 테이블뷰 갱신
         }
+        
+        (window?.rootViewController as? MainHomeViewController)?.checkIfNewDay()
+        
     }
 
     
@@ -87,7 +90,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Called as the scene transitions from the foreground to the background.
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state
-        (window?.rootViewController as? MainHomeViewController)?.scheduleAllHabitNotifications()
     }
     
     

@@ -1,5 +1,6 @@
 import UIKit
 
+
 protocol EditProfileViewControllerDelegate: AnyObject {
     func didUpdateProfile(name: String, age: String, gender: String, profileImage: UIImage?)
 }
@@ -44,7 +45,7 @@ class EditProfileViewController: UIViewController {
     
     
     
-    /* ⬇️ 세팅 */
+    // MARK: - ⬇️ UI Setting
     private func setUI() {
         view.backgroundColor = .black
         
@@ -54,25 +55,7 @@ class EditProfileViewController: UIViewController {
         isConfirmedButtonSetting()
     }
     
-    private func setDelegate() {
-        [nameTextField, ageTextField].forEach {
-            $0.delegate = self
-        }
-    }
-    
-    private func setKeyboard() {
-        // 키보드 나타날 때 화면 조정
-        keyboardObserver()
-    }
-    
-    private func setAddTarget() {
-        // 텍스트필드에 addTarget 설정
-        nameTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        ageTextField.addTarget(self , action: #selector(textFieldsDidChange), for: .editingChanged)
-    }
-    
-    
-    // 이미지뷰 세팅
+    // 이미지뷰 세팅, 탭 제스쳐 addTarget -> imageViewTapped() 호출
     private func editImageSetting() {
         editImage.image = UIImage(systemName: "person.crop.circle.fill")
         editImage.tintColor = .lightGray
@@ -89,9 +72,9 @@ class EditProfileViewController: UIViewController {
         editImage.addGestureRecognizer(tapGesture)
     }
     
-    private func textFieldSetting() {
-        configureTextField(nameTextField, placeholder: "이름을 입력해주세요", keyboardType: .default, returnKeyType: .next)
-        configureTextField(ageTextField, placeholder: "나이를 입력해주세요", keyboardType: .numberPad, returnKeyType: .done)
+    // 이미지뷰가 탭 되었을 때 갤러리 오픈
+    @objc func imageViewTapped() {
+        changeImageButtonTapped(changeImageButton)
     }
     
     private func cancelButtonSetting() {
@@ -100,12 +83,9 @@ class EditProfileViewController: UIViewController {
         cancelButton.backgroundColor = .clear
     }
     
-    private func isConfirmedButtonSetting() {
-        isConfirmedButton.layer.borderWidth = 2
-        isConfirmedButton.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
-        isConfirmedButton.backgroundColor = .clear
-        isConfirmedButton.setTitleColor(#colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1), for: .normal)
-        
+    private func textFieldSetting() {
+        configureTextField(nameTextField, placeholder: "이름을 입력해주세요", keyboardType: .default, returnKeyType: .next)
+        configureTextField(ageTextField, placeholder: "나이를 입력해주세요", keyboardType: .numberPad, returnKeyType: .done)
     }
     
     // TextField 세팅 함수
@@ -119,9 +99,95 @@ class EditProfileViewController: UIViewController {
         textField.returnKeyType = returnKeyType
     }
     
+    private func isConfirmedButtonSetting() {
+        isConfirmedButton.layer.borderWidth = 2
+        isConfirmedButton.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
+        isConfirmedButton.backgroundColor = .clear
+        isConfirmedButton.setTitleColor(#colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1), for: .normal)
+    }
     
     
-    /* ⬇️ 기능 */
+    
+    private func setDelegate() {
+        [nameTextField, ageTextField].forEach {
+            $0.delegate = self
+        }
+    }
+    
+    private func setKeyboard() {
+        // 키보드 나타날 때 화면 조정
+        keyboardObserver()
+    }
+    
+    // addTarget -> textFieldsDidChange() 호출
+    private func setAddTarget() {
+        nameTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        ageTextField.addTarget(self , action: #selector(textFieldsDidChange), for: .editingChanged)
+    }
+    
+    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState() 호출
+    @objc private func textFieldsDidChange(_ textField: UITextField) {
+        //     텍스트필드가 모두 채워지면 버튼 색상 변경
+        updateButtonState()
+    }
+    
+    // 텍스트필드가 모두 채워지면 버튼 색상 변경
+    private func updateButtonState() {
+        // idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
+        if let nameTextField = nameTextField.text, !nameTextField.isEmpty,
+           let ageTextField = ageTextField.text, !ageTextField.isEmpty {
+            isConfirmedButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
+            isConfirmedButton.titleLabel?.textColor = .white // 원하는 색으로 변경
+            isConfirmedButton.setTitleColor(.white, for: .normal)
+            isConfirmedButton.isEnabled = true
+        } else {
+            isConfirmedButtonSetting()
+        }
+    }
+    
+    
+    
+    // 키보드 유무에 따른 화면 조정 addObserver
+    private func keyboardObserver() {
+        // 키보드가 나타날 때 호출되는 메서드 등록
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        
+        // 키보드가 사라질 때 호출되는 메서드 등록
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+    }
+    
+    // 키보드가 나타날 때 화면 조정(addTarget 자동호출함수)
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+            // 키보드가 나타날 때 텍스트 필드를 가리지 않도록 뷰를 위로 이동
+            if view.frame.origin.y == 0 {
+                view.frame.origin.y -= keyboardSize.height / 2
+            }
+        }
+    }
+    
+    // 키보드가 사라질 때 화면 조정 (addTarget 자동호출함수)
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        // 키보드가 사라질 때 뷰를 원래 위치로 이동
+        if view.frame.origin.y != 0 {
+            view.frame.origin.y = 0
+        }
+    }
+    
+    // 앱의 화면 터치하면 키보드 내려가게
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
+    }
+    
+    deinit {
+        // 옵저버 해제
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+
+    
+    // MARK: - ⬇️ Function
     // 사진 변경 버튼
     @IBAction private func changeImageButtonTapped(_ sender: UIButton) {
         let imagePickerController = UIImagePickerController()
@@ -170,53 +236,10 @@ class EditProfileViewController: UIViewController {
         self.dismiss(animated: true)
     }
     
-    // 이미지뷰가 탭 되었을 때 갤러리 오픈
-    @objc func imageViewTapped() {
-        changeImageButtonTapped(changeImageButton)
-    }
-    
-    // 앱의 화면 터치하면 키보드 내려가게
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.view.endEditing(true)
-    }
-    
-    // 키보드 유무에 따른 화면 조정 addObserver
-    private func keyboardObserver() {
-        // 키보드가 나타날 때 호출되는 메서드 등록
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
-        
-        // 키보드가 사라질 때 호출되는 메서드 등록
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
-        
-    }
-    
-    // 키보드가 나타날 때 화면 조정(addTarget 자동호출함수)
-    @objc private func keyboardWillShow(notification: NSNotification) {
-        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
-            // 키보드가 나타날 때 텍스트 필드를 가리지 않도록 뷰를 위로 이동
-            if view.frame.origin.y == 0 {
-                view.frame.origin.y -= keyboardSize.height / 2
-            }
-        }
-    }
-    
-    // 키보드가 사라질 때 화면 조정 (addTarget 자동호출함수)
-    @objc private func keyboardWillHide(notification: NSNotification) {
-        // 키보드가 사라질 때 뷰를 원래 위치로 이동
-        if view.frame.origin.y != 0 {
-            view.frame.origin.y = 0
-        }
-    }
-    
-    deinit {
-        // 옵저버 해제
-        NotificationCenter.default.removeObserver(self)
-    }
-    
 }
 
 
-
+// MARK: - ⬇️ extension UIImagePickerControllerDelegate, UINavigationControllerDelegate
 extension EditProfileViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     // UIImagePickerControllerDelegate 메서드
@@ -242,30 +265,8 @@ extension EditProfileViewController: UIImagePickerControllerDelegate, UINavigati
 }
 
 
-
+// MARK: - ⬇️ extension UITextFieldDelegate
 extension EditProfileViewController: UITextFieldDelegate {
-    
-    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState
-    @objc private func textFieldsDidChange(_ textField: UITextField) {
-        //     텍스트필드가 모두 채워지면 버튼 색상 변경
-        updateButtonState()
-    }
-    
-    
-    //     텍스트필드가 모두 채워지면 버튼 색상 변경
-    private func updateButtonState() {
-        // idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
-        if let nameTextField = nameTextField.text, !nameTextField.isEmpty,
-           let ageTextField = ageTextField.text, !ageTextField.isEmpty {
-            isConfirmedButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
-            isConfirmedButton.titleLabel?.textColor = .white // 원하는 색으로 변경
-            //            isConfirmedButton.setTitleColor(.white, for: .normal)
-            isConfirmedButton.isEnabled = true
-        } else {
-            isConfirmedButtonSetting()
-        }
-    }
-    
     // 키보드 리턴키 눌렸을 때 id면 pw로 키보드 전환, pw면 로그인 버튼 눌림
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         

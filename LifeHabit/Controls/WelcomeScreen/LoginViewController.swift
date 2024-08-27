@@ -1,5 +1,6 @@
 import UIKit
 
+
 class LoginViewController: UIViewController {
     
     @IBOutlet private weak var idTextField: UITextField!
@@ -21,16 +22,46 @@ class LoginViewController: UIViewController {
 
     
     
-    /* ⬇️ 세팅 */
+    // MARK: - ⬇️ UI Setting
     private func setUI() {
         view.backgroundColor = .black
+        
         // back 버튼 수정
-        navigationController?.navigationBar.tintColor = .white // 원하는 색상으로 변경
+        navigationController?.navigationBar.tintColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
         
         textFieldSetting()
         loginButtonSetting()
     }
     
+    // idTextField, pwTextField 세팅
+    private func textFieldSetting() {
+        configureTextField(idTextField, placeholder: "아이디", returnKeyType: .next)
+        configureTextField(pwTextField, placeholder: "비밀번호", returnKeyType: .done)
+        pwTextField.isSecureTextEntry = true
+    }
+    
+    // TextField 세팅
+    private func configureTextField(_ textField: UITextField, placeholder: String, returnKeyType: UIReturnKeyType) {
+        textField.backgroundColor = .darkGray
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+        textField.textColor = .white
+        textField.keyboardType = .default
+        textField.layer.borderWidth = 2
+        textField.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
+        textField.returnKeyType = returnKeyType
+    }
+    
+    private func loginButtonSetting() {
+        loginButton.setTitle("로그인", for: .normal)
+        loginButton.backgroundColor = .clear
+        loginButton.setTitleColor(.white, for: .normal)
+        loginButton.layer.cornerRadius = 5
+        loginButton.layer.borderWidth = 1
+        loginButton.layer.borderColor = #colorLiteral(red: 1, green: 0.4558857679, blue: 0.04058742523, alpha: 1)
+    }
+    
+    
+
     private func setDelegate() {
         idTextField.delegate =  self
         pwTextField.delegate =  self
@@ -43,66 +74,10 @@ class LoginViewController: UIViewController {
     }
     
     private func setKeyboard() {
-        // 키보드 나타날 때 화면 조정
         keyboardObserver()
     }
     
-    // idTextField, pwTextField 세팅
-    private func textFieldSetting() {
-        configureTextField(idTextField, placeholder: "아이디", returnKeyType: .next)
-        configureTextField(pwTextField, placeholder: "비밀번호", returnKeyType: .done)
-        pwTextField.isSecureTextEntry = true
-    }
-    
-    private func loginButtonSetting() {
-        loginButton.setTitle("로그인", for: .normal)
-        loginButton.backgroundColor = .clear
-        loginButton.setTitleColor(.white, for: .normal)
-        loginButton.layer.cornerRadius = 5
-        loginButton.layer.borderWidth = 1
-        loginButton.layer.borderColor = #colorLiteral(red: 1, green: 0.4558857679, blue: 0.04058742523, alpha: 1)
-    }
-    
-    private func configureTextField(_ textField: UITextField, placeholder: String, returnKeyType: UIReturnKeyType) {
-        textField.backgroundColor = .darkGray
-        textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-        textField.textColor = .white
-        textField.keyboardType = .default
-        textField.layer.borderWidth = 2
-        textField.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
-        textField.returnKeyType = returnKeyType
-        
-    }
-    
-    
-    
-    /* ⬇️ 뒤처리용 함수 */
-    // 로그인버튼
-    @IBAction private func loginButtonTapped(_ sender: UIButton) {
-        if idTextField.text == "usia" && pwTextField.text == "1234" || idTextField.text == "test" && pwTextField.text == "1234"{
-            self.dismiss(animated: true)
-        } else {
-            let alert = UIAlertController(title: "로그인 오류", message: "로그인 또는 비밀번호가 맞지 않습니다.", preferredStyle: .alert) // .actionSheet 은 아래에 뜨는 얼럿창
-            let success = UIAlertAction(title: "확인", style: .default) { action in
-                print("확인버튼이 눌렸습니다.")
-                self.idTextField.becomeFirstResponder()
 
-            }
-            
-            alert.addAction(success)
-            // 실제 띄우기
-            self.present(alert, animated: true, completion: nil)
-        }
-        
-        
-        
-    }
-    
-    // 앱의 화면 터치하면 키보드 내려가게
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.view.endEditing(true)
-    }
-    
     // 키보드 유무에 따른 화면 조정 addObserver
     private func keyboardObserver() {
         // 키보드가 나타날 때 호출되는 메서드 등록
@@ -131,14 +106,42 @@ class LoginViewController: UIViewController {
         }
     }
     
+    // 앱의 화면 터치하면 키보드 내려가게
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
+    }
+    
     deinit {
         // 옵저버 해제
         NotificationCenter.default.removeObserver(self)
+    }
+
+    
+    
+    // MARK: - ⬇️ Function
+    // 로그인버튼
+    @IBAction private func loginButtonTapped(_ sender: UIButton) {
+        if idTextField.text == "usia" && pwTextField.text == "1234" || idTextField.text == "test" && pwTextField.text == "1234"{
+            self.dismiss(animated: true)
+        } else {
+            let alert = UIAlertController(title: "로그인 오류", message: "로그인 또는 비밀번호가 맞지 않습니다.", preferredStyle: .alert) // .actionSheet 은 아래에 뜨는 얼럿창
+            let success = UIAlertAction(title: "확인", style: .default) { action in
+                print("확인버튼이 눌렸습니다.")
+                self.idTextField.becomeFirstResponder()
+
+            }
+            
+            alert.addAction(success)
+            // 실제 띄우기
+            self.present(alert, animated: true, completion: nil)
+        }
     }
     
 }
 
 
+
+// MARK: - ⬇️ extension UITextFieldDelegate
 extension LoginViewController: UITextFieldDelegate {
     
     // 키보드 리턴키 눌렸을 때 id면 pw로 키보드 전환, pw면 로그인 버튼 눌림

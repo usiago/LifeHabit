@@ -1,5 +1,6 @@
 import UIKit
 
+
 class SignUpViewController: UIViewController {
     
     @IBOutlet private weak var idTextField: UITextField!
@@ -24,33 +25,15 @@ class SignUpViewController: UIViewController {
     }
     
     
-    
-    /* ⬇️ 세팅 */
+    // MARK: - ⬇️ UI Setting
     private func setUI() {
         view.backgroundColor = .black
+        
         // back 버튼 수정
-        navigationController?.navigationBar.tintColor = .white // 원하는 색상으로 변경
+        navigationController?.navigationBar.tintColor =  #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
         
         textFieldSetting()
         signUpButtonSetting()
-    }
-
-    private func setDelegate() {
-        idTextField.delegate =  self
-        pwTextField.delegate =  self
-        pwCheckTextField.delegate = self
-    }
-    
-    private func setAddTarget() {
-        // 텍스트필드에 addTarget 설정
-        idTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        pwTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        pwCheckTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-    }
-    
-    private func setKeyboard() {
-        // 키보드 나타날 때 화면 조정
-        keyboardObserver()
     }
     
     // idTextField, pwTextField, pwCheckTextField 세팅
@@ -60,6 +43,17 @@ class SignUpViewController: UIViewController {
         configureTextField(pwCheckTextField, placeholder: "비밀번호 확인", returnKeyType: .done)
         pwTextField.isSecureTextEntry = true
         pwCheckTextField.isSecureTextEntry = true
+    }
+    
+    // TextField 세팅
+    private func configureTextField(_ textField: UITextField, placeholder: String, returnKeyType: UIReturnKeyType) {
+        textField.backgroundColor = .darkGray
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+        textField.textColor = .white
+        textField.keyboardType = .default
+        textField.layer.borderWidth = 2
+        textField.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
+        textField.returnKeyType = returnKeyType
     }
 
     // signUpButton 세팅
@@ -73,47 +67,45 @@ class SignUpViewController: UIViewController {
         signUpButton.layer.borderColor = #colorLiteral(red: 1, green: 0.4558857679, blue: 0.04058742523, alpha: 1)
     }
 
-    private func configureTextField(_ textField: UITextField, placeholder: String, returnKeyType: UIReturnKeyType) {
-        textField.backgroundColor = .darkGray
-        textField.attributedPlaceholder = NSAttributedString(string: placeholder, attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-        textField.textColor = .white
-        textField.keyboardType = .default
-        textField.layer.borderWidth = 2
-        textField.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
-        textField.returnKeyType = returnKeyType
-    }
     
-    
-    
-    /* ⬇️ 기능 */
-    // 회원가입 버튼 클릭
-    @IBAction private func signUpButtonTapped(_ sender: UIButton) {
-        
-        // 회원가입을 성공했을 시
-        // 회원 데이터베이스화
-        
-        let alert = UIAlertController(title: "회원가입 성공", message: "", preferredStyle: .alert) // .actionSheet 은 아래에 뜨는 얼럿창
-        let success = UIAlertAction(title: "로그인", style: .default) { action in
-            self.navigationController?.popViewController(animated: true)
-            
-            
-            guard let loginVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as? LoginViewController else { return }
-            // loginVC.data = "데이터전달"
-            // 내비게이션 컨트롤러를 통해 화면 전환
-            self.navigationController?.pushViewController(loginVC, animated: true)
+    private func setDelegate() {
+        [idTextField, pwTextField, pwCheckTextField].forEach {
+            $0.delegate = self
         }
-        alert.addAction(success)
-        
-        // 실제 띄우기
-        self.present(alert, animated: true, completion: nil)
-        
     }
     
-    // 앱의 화면 터치하면 키보드 내려가게
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.view.endEditing(true)
+    // addTarget -> textFieldsDidChange() 호출
+    private func setAddTarget() {
+        // 텍스트필드에 addTarget 설정
+        idTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        pwTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        pwCheckTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
     }
     
+    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState() 호출
+    @objc private func textFieldsDidChange(_ textField: UITextField) {
+        updateButtonState()
+    }
+    
+    // 텍스트필드가 모두 채워지면 버튼 색상 변경
+    private func updateButtonState() {
+        //         idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
+        if let idText = idTextField.text, !idText.isEmpty,
+           let pwText = pwTextField.text, !pwText.isEmpty,
+           let pwCheckText = pwCheckTextField.text, !pwCheckText.isEmpty,
+           pwTextField.text == pwCheckTextField.text {
+            signUpButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
+            signUpButton.isEnabled = true
+        } else {
+            signUpButtonSetting()
+        }
+    }
+    
+    private func setKeyboard() {
+        keyboardObserver()
+    }
+    
+
     // 키보드 유무에 따른 화면 조정 addObserver
     private func keyboardObserver() {
         // 키보드가 나타날 때 호출되는 메서드 등록
@@ -141,35 +133,47 @@ class SignUpViewController: UIViewController {
             view.frame.origin.y = 0
         }
     }
+    
+    // 앱의 화면 터치하면 키보드 내려가게
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
+    }
 
     deinit {
         // 옵저버 해제
         NotificationCenter.default.removeObserver(self)
     }
-
-    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState
-    @objc private func textFieldsDidChange(_ textField: UITextField) {
-        updateButtonState()
-    }
     
-    //     텍스트필드가 모두 채워지면 버튼 색상 변경
-    private func updateButtonState() {
-        //         idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
-        if let idText = idTextField.text, !idText.isEmpty,
-           let pwText = pwTextField.text, !pwText.isEmpty,
-           let pwCheckText = pwCheckTextField.text, !pwCheckText.isEmpty,
-           pwTextField.text == pwCheckTextField.text {
-            signUpButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
-            signUpButton.isEnabled = true
-        } else {
-            signUpButtonSetting()
+    
+    
+    // MARK: - ⬇️ Function
+    // 회원가입 버튼 클릭
+    @IBAction private func signUpButtonTapped(_ sender: UIButton) {
+        
+        // 회원가입을 성공했을 시
+        // + 회원 데이터베이스화
+        
+        let alert = UIAlertController(title: "회원가입 성공", message: "", preferredStyle: .alert) // .actionSheet 은 아래에 뜨는 얼럿창
+        let success = UIAlertAction(title: "로그인", style: .default) { action in
+            self.navigationController?.popViewController(animated: true)
+            
+            
+            guard let loginVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as? LoginViewController else { return }
+            // loginVC.data = "데이터전달"
+            // 내비게이션 컨트롤러를 통해 화면 전환
+            self.navigationController?.pushViewController(loginVC, animated: true)
         }
+        alert.addAction(success)
+        
+        // 실제 띄우기
+        self.present(alert, animated: true, completion: nil)
+        
     }
-    
+
 }
 
 
-
+// MARK: - ⬇️ extension UITextFieldDelegate
 extension SignUpViewController: UITextFieldDelegate {
     
     // 키보드 리턴키 눌렸을 때 id면 pw로 키보드 전환, pw면 로그인 버튼 눌림

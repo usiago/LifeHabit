@@ -1,5 +1,6 @@
 import UIKit
 
+
 protocol EditHabitViewControllerDelegate: AnyObject {
     func didUpdateHabit(_ habit: HabitDataStructure)
     func didDeleteHabit(_ habit: HabitDataStructure)
@@ -28,6 +29,8 @@ class EditHabitViewController: UIViewController {
     
     weak var delegate: EditHabitViewControllerDelegate?
     
+    var habitDataManager = HabitDataManager()
+    
     
     
     override func viewDidLoad() {
@@ -36,7 +39,6 @@ class EditHabitViewController: UIViewController {
         setUI()
         setDelegate()
         setTextFieldAddTarget()
-        setTextField()
         setKeyboard()
         
         loadHabitData()
@@ -46,18 +48,9 @@ class EditHabitViewController: UIViewController {
     
     
     
-    /* ⬇️ 세팅 */
-    private func setTextFieldAddTarget() {
-        [habitNameTextField, habitIdentityTextField, doWhere, reward].forEach {
-            $0.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        }
-    }
+    // MARK: - ⬇️ UI Setting
+
     
-    private func setDelegate() {
-        [habitNameTextField, habitIdentityTextField, doWhere, reward].forEach {
-            $0.delegate = self
-        }
-    }
     
     private func setUI() {
         view.backgroundColor = .black
@@ -67,11 +60,6 @@ class EditHabitViewController: UIViewController {
         removeButtonSetting()
         setTextField()
     }
-    
-    private func setKeyboard() {
-        keyboardObserver()
-    }
-    
     
     private func datePickerSetting() {
         datePicker.overrideUserInterfaceStyle = .dark
@@ -94,21 +82,11 @@ class EditHabitViewController: UIViewController {
         removeButton.backgroundColor = .clear
     }
     
-    
     private func setTextField() {
         configureTextField(habitNameTextField, placeholder: "5분 명상", returnKeyType: .next)
         configureTextField(habitIdentityTextField, placeholder: "마음을 정리하는 사람", returnKeyType: .next)
         configureTextField(doWhere, placeholder: "집에서 기상 직후", returnKeyType: .next)
         configureTextField(reward, placeholder: "시원한 물 한잔", returnKeyType: .done)
-    }
-    
-    // 키보드 나타날 때 화면 조정
-    private func keyboardObserver() {
-        // 키보드가 나타날 때 호출되는 메서드 등록
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
-        
-        // 키보드가 사라질 때 호출되는 메서드 등록
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     // TextField 세팅 함수
@@ -120,6 +98,45 @@ class EditHabitViewController: UIViewController {
         textField.layer.borderWidth = 2
         textField.layer.borderColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1)
         textField.returnKeyType = returnKeyType
+    }
+    
+
+    
+    private func setDelegate() {
+        [habitNameTextField, habitIdentityTextField, doWhere, reward].forEach {
+            $0.delegate = self
+        }
+    }
+
+    // textFieldsDidChange() 호출
+    private func setTextFieldAddTarget() {
+        [habitNameTextField, habitIdentityTextField, doWhere, reward].forEach {
+            $0.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        }
+    }
+    
+    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState() 호출
+    @objc private func textFieldsDidChange(_ textField: UITextField) {
+        updateButtonState()
+    }
+    
+    // 텍스트필드가 모두 채워지면 버튼 색상 변경
+    private func updateButtonState() {
+        // idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
+        if let habitNameTextField = habitNameTextField.text, !habitNameTextField.isEmpty,
+           let habitIdentityTextField = habitIdentityTextField.text, !habitIdentityTextField.isEmpty,
+           let doWhere = doWhere.text, !doWhere.isEmpty,
+           let reward = reward.text, !reward.isEmpty {
+            editButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
+            editButton.titleLabel?.textColor = .white // 원하는 색으로 변경
+            //            createButton.isEnabled = true
+        } else {
+            editButtonSetting()
+        }
+    }
+    
+    private func setKeyboard() {
+        keyboardObserver()
     }
     
     // 초기값 받아오기 함수
@@ -142,7 +159,46 @@ class EditHabitViewController: UIViewController {
     
     
     
-    /* ⬇️ 기능 */
+    // 키보드 나타날 때 화면 조정
+    private func keyboardObserver() {
+        // 키보드가 나타날 때 호출되는 메서드 등록
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        
+        // 키보드가 사라질 때 호출되는 메서드 등록
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    // 키보드가 나타날 때 화면 조정(addTarget 자동호출함수)
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+            // 키보드가 나타날 때 텍스트 필드를 가리지 않도록 뷰를 위로 이동
+            if view.frame.origin.y == 0 {
+                view.frame.origin.y -= keyboardSize.height / 2
+            }
+        }
+    }
+    
+    // 키보드가 사라질 때 화면 조정 (addTarget 자동호출함수)
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        // 키보드가 사라질 때 뷰를 원래 위치로 이동
+        if view.frame.origin.y != 0 {
+            view.frame.origin.y = 0
+        }
+    }
+    
+    // 앱의 화면 터치하면 키보드 내려가게
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
+    }
+    
+    // 옵저버 해제
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    
+    
+    // MARK: - ⬇️ Function
     // 알람 버튼 눌렸을 때
     @IBAction private func alramButtonTapped(_ sender: UIButton) {
         
@@ -176,13 +232,8 @@ class EditHabitViewController: UIViewController {
         habit.reward = reward.text ?? habit.reward
 
         
-        // 🍎 기존 알람 취소
-        cancelNotification(for: habit)
-        
-        // 🍎 새로운 알람 등록
-        if alramButton.isSelected {
-            scheduleNotification(for: habit)
-        }
+        // 수정된 습관 알림 갱신
+        habitDataManager.updateHabit(habit)
         
         
         // Delegate를 통해 수정된 habit 전달
@@ -194,8 +245,8 @@ class EditHabitViewController: UIViewController {
     @IBAction func removeButtonTapped(_ sender: UIButton) {
         guard let habit = habit else { return }
         
-        // 🍎
-        cancelNotification(for: habit)
+        // 삭제된 습관 알림 해제
+        habitDataManager.deleteHabit(habit)
         
         // Delegate를 통해 삭제 알리기
         delegate?.didDeleteHabit(habit)
@@ -203,85 +254,11 @@ class EditHabitViewController: UIViewController {
         // 현재 화면 닫기
         dismiss(animated: true, completion: nil)
     }
-    
-    //텍스트필드가 모두 채워지면 버튼 색상 변경
-    private func updateButtonState() {
-        // idTextField와 pwTextField가 모두 비어 있지 않다면 버튼의 색깔을 변경
-        if let habitNameTextField = habitNameTextField.text, !habitNameTextField.isEmpty,
-           let habitIdentityTextField = habitIdentityTextField.text, !habitIdentityTextField.isEmpty,
-           let doWhere = doWhere.text, !doWhere.isEmpty,
-           let reward = reward.text, !reward.isEmpty {
-            editButton.backgroundColor = #colorLiteral(red: 1, green: 0.4549019608, blue: 0.03921568627, alpha: 1) // 원하는 색으로 변경
-            editButton.titleLabel?.textColor = .white // 원하는 색으로 변경
-            //            createButton.isEnabled = true
-        } else {
-            editButtonSetting()
-        }
-    }
-    
-    // 텍스트필드의 값이 변경될 때 호출되는 메서드 -> updateButtonState
-    @objc private func textFieldsDidChange(_ textField: UITextField) {
-        updateButtonState()
-    }
-    
-    // 키보드가 나타날 때 화면 조정(addTarget 자동호출함수)
-    @objc private func keyboardWillShow(notification: NSNotification) {
-        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
-            // 키보드가 나타날 때 텍스트 필드를 가리지 않도록 뷰를 위로 이동
-            if view.frame.origin.y == 0 {
-                view.frame.origin.y -= keyboardSize.height / 2
-            }
-        }
-    }
-    
-    // 키보드가 사라질 때 화면 조정 (addTarget 자동호출함수)
-    @objc private func keyboardWillHide(notification: NSNotification) {
-        // 키보드가 사라질 때 뷰를 원래 위치로 이동
-        if view.frame.origin.y != 0 {
-            view.frame.origin.y = 0
-        }
-    }
-    
-    // 앱의 화면 터치하면 키보드 내려가게
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.view.endEditing(true)
-    }
-    
-    // 옵저버 해제
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
-    // 상단바 알림 설정
-    func scheduleNotification(for habit: HabitDataStructure) {
-        let content = UNMutableNotificationContent()
-        content.title = "까먹지마세요!"
-        content.body = "\(habit.name) 할 시간입니다!"
-        content.sound = .default
-        
-        let triggerDate = Calendar.current.dateComponents([.hour, .minute], from: datePicker.date)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-        
-        let request = UNNotificationRequest(identifier: habit.id.uuidString, content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request) { error in
-//            if let error = error {
-//                print("알림 등록 실패: \(error.localizedDescription)")
-//            } else {
-//                print("알림 등록 성공: \(habit.name) 시간 - \(habit.time)")
-//            }
-        }
-    }
-    
-    // 알림 삭제
-    func cancelNotification(for habit: HabitDataStructure) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [habit.id.uuidString])
-        print("알림 취소: \(habit.name)")
-    }
-    
+
 }
 
 
-
+// MARK: - ⬇️ extension UITextFieldDelegate
 extension EditHabitViewController: UITextFieldDelegate {
     
     // 리턴키 누르면 다음 텍스트필드로

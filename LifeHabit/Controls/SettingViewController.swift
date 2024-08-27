@@ -1,5 +1,6 @@
 import UIKit
 
+
 class SettingViewController: UIViewController {
     
     @IBOutlet private weak var accountView: UIView!
@@ -17,15 +18,16 @@ class SettingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
         setUI()
-        loadAndDisplayProfileData()  // 앱 실행 시 프로필 데이터 로드 및 표시
+        
+        // 앱 실행 시 프로필 데이터 로드 및 표시
+        loadAndDisplayProfileData()
         // Do any additional setup after loading the view.
     }
     
     
     
-    /* ⬇️ 세팅 */
+    // MARK: - ⬇️ UI Setting
     private func setUI() {
         view.backgroundColor = .black
         
@@ -73,9 +75,9 @@ class SettingViewController: UIViewController {
     
     
     
-    /* ⬇️ 기능 */
+    // MARK: - ⬇️ Function
+    // 이미지뷰가 탭 되었을 때 갤러리 열기
     @objc private func imageViewTapped() {
-        // 이미지뷰가 탭 되었을 때 갤러리 열기
         let imagePickerController = UIImagePickerController()
         imagePickerController.delegate = self
         imagePickerController.sourceType = .photoLibrary
@@ -156,6 +158,7 @@ class SettingViewController: UIViewController {
 
 
 
+// MARK: - ⬇️ extension UIImagePickerControllerDelegate, UINavigationControllerDelegate
 extension SettingViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     // UIImagePickerControllerDelegate 메서드
@@ -178,9 +181,12 @@ extension SettingViewController: UIImagePickerControllerDelegate, UINavigationCo
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true, completion: nil)
     }
+    
 }
 
 
+
+// MARK: - ⬇️ extension EditProfileViewControllerDelegate
 extension SettingViewController: EditProfileViewControllerDelegate {
     
     func didUpdateProfile(name: String, age: String, gender: String, profileImage: UIImage?) {
@@ -201,4 +207,5 @@ extension SettingViewController: EditProfileViewControllerDelegate {
         )
         saveProfileData(profileData)
     }
+    
 }

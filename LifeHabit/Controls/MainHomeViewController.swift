@@ -1,5 +1,4 @@
 import UIKit
-import UserNotifications
 
 
 class MainHomeViewController: UIViewController {
@@ -21,22 +20,20 @@ class MainHomeViewController: UIViewController {
         
         // UI 세팅
         setUI()
+        
+        // 테이블뷰의 델리게이트와 데이터소스 델리게이트 세팅
         setTableViewDelegate_DataSource()
+        checkIfNewDay()
+        setTableViewReload()
+        updateProgressBar()
         
-        
-        // 로그인되어있지않으면 welcomeController로
         if !isLoggedIn() {
             toLoginPage()
         }
-        
-        setTableViewReload()
-        updateProgressBar()
-        setNotification()
     }
     
     
-    
-    /* ⬇️ 세팅 */
+    // MARK: - ⬇️ UI Setting
     func setUI() {
         view.backgroundColor = .black
         
@@ -108,6 +105,19 @@ class MainHomeViewController: UIViewController {
         mainTableView.separatorColor = UIColor.darkGray
     }
     
+    
+    
+    // 자정이 지났는지 확인하는 함수
+    func checkIfNewDay() {
+        let lastResetDate = UserDefaults.standard.object(forKey: "lastResetDate") as? Date
+        let now = Date()
+        
+        // 오늘 날짜와 마지막 초기화 날짜를 비교하여 자정을 넘었는지 확인
+        if lastResetDate == nil || !Calendar.current.isDate(now, inSameDayAs: lastResetDate!) {
+            resetHabitsForNewDay()
+        }
+    }
+    
     func setTableViewReload() {
         //  데이터를 로드하고 테이블뷰에 반영
         habitDataManager.loadHabitData()
@@ -119,17 +129,9 @@ class MainHomeViewController: UIViewController {
         mainTableView.dataSource = self
     }
     
-    func setNotification() {
-        // 알림 권한 요청
-        requestNotificationAuthorization()
-        
-        // 알림 등록
-        scheduleAllHabitNotifications()
-    }
     
     
-    
-    /* ⬇️ 기능 */
+    // MARK: - ⬇️ Function
     // 오늘을 'yyyy년 m월 d일' 문자열형으로 반환하는 함수
     func printToday() -> String {
         // 오늘 날짜를 가져옵니다.
@@ -227,59 +229,10 @@ class MainHomeViewController: UIViewController {
             UserDefaults.standard.set(now, forKey: "lastResetDate")
         }
     }
-
-    
-    // 알림 권한 요청
-    func requestNotificationAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("알림 권한 요청 실패: \(error.localizedDescription)")
-            } else if granted {
-                print("알림 권한이 허용되었습니다.")
-            } else {
-                print("알림 권한이 거부되었습니다.")
-            }
-        }
-    }
-    
-    func scheduleAllHabitNotifications() {
-        for habit in habitDataManager.habitDataList where habit.isCompleted == false {
-            scheduleNotification(for: habit)
-        }
-    }
-    
-    func scheduleNotification(for habit: HabitDataStructure) {
-        let content = UNMutableNotificationContent()
-        content.title = "까먹지마세요!"
-        content.body = "\(habit.name) 할 시간입니다!"
-        content.sound = .default
-        
-        if let date = habit.time.toDate() {
-            let triggerDate = Calendar.current.dateComponents([.hour, .minute], from: date)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true) // 매일 반복
-            
-            let request = UNNotificationRequest(identifier: habit.id.uuidString, content: content, trigger: trigger)
-            UNUserNotificationCenter.current().add(request) { error in
-//                if let error = error {
-//                    print("알림 등록 실패: \(error.localizedDescription)")
-//                } else {
-//                    print("알림 등록 성공: \(habit.name) 시간 - \(habit.time)")
-//                }
-            }
-        } else {
-            print("날짜 변환 실패: \(habit.time)")
-        }
-    }
-
-    func cancelNotification(for habit: HabitDataStructure) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [habit.id.uuidString])
-        print("알림 취소: \(habit.name)")
-    }
-    
 }
 
 
-
+// MARK: - ⬇️ extension UITableViewDelegate
 extension MainHomeViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -303,6 +256,7 @@ extension MainHomeViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
     
+    // 셀을 탭했을 때 EditViewController로 전환 + 델리게이트 설정
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let selectedHabit = habitDataManager.getHabitData()[indexPath.row]
         
@@ -317,22 +271,19 @@ extension MainHomeViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 
-
-// AddHabitViewController 델리게이트
+// MARK: - ⬇️ extension AddHabitViewControllerDelegate
 extension MainHomeViewController: AddHabitViewControllerDelegate {
-    // AddHabitViewControllerDelegate 메서드
     func didAddHabit(_ habit: HabitDataStructure) {
         habitDataManager.habitDataList.append(habit) // 새로운 습관 데이터를 배열에 추가
-        habitDataManager.saveHabitData() //🍎
+        habitDataManager.saveHabitData()
         mainTableView.reloadData() // 테이블뷰를 다시 로드하여 업데이트된 데이터를 반영
         updateProgressBar() // progress 업데이트
     }
-    
 }
 
 
 
-// HabitTableViewCell 델리게이트
+// MARK: - ⬇️ extension HabitTableViewCellDelegate
 extension MainHomeViewController: HabitTableViewCellDelegate {
     
     func checkboxToggled(for habit: HabitDataStructure) {
@@ -348,9 +299,8 @@ extension MainHomeViewController: HabitTableViewCellDelegate {
 
 
 
-// EditHabitViewController 델리게이트
+// MARK: - ⬇️ extension EditHabitViewControllerDelegate
 extension MainHomeViewController: EditHabitViewControllerDelegate {
-    
     // 수정할 때
     func didUpdateHabit(_ updatedHabit: HabitDataStructure) {
         if let index = habitDataManager.getHabitData().firstIndex(where: { $0.id == updatedHabit.id }) { // UUID로 식별
